@@ -1,10 +1,33 @@
 \documentclass{article}
 
-\title{Interoperability of fingerprint devices}
+
+\usepackage{graphicx}
+\usepackage{subfigure}
 \begin{document}
+%\maketitle{Interoperability of fingerprint devices}
 \section*{Introduction}
+A biometric system based on fingerprint trait consists of a fingerprint scanner device and its software development kit called the device's SDK.
+The SDK is a library which is used to create application on top the fingerprint scanner and provides functionality to do operations 
+which allows us to build a biometric system. Our aim was to study interoperability issues among biometric systems obtained from different manufacturers.
+So given a biometric recognition system from a particular manufacturer we must be able to use it with another manufacturers as well. Problems arises when 
+we attempt to do any such process. Certain standards have to be followed when are attempting such endeavours. Image needs to follow same standard. Features 
+are to be stored in a particular format such as ISO-IEC 19794-2:2005. This is required so that artifact from each stage can be used with the next stage required
+in a identification or verification in a system different other than the source of the artifact. Even after doing so identification or recognition rate should have a decent accuracy.
+
 For our experiment we have been using fingerprint scanner devices and their respective software development kits from three manufacturers
-Lumidigm,Futronic and Secugen.
+Lumidigm,Futronic and Secugen. Apart from the scanner device itself, we also need the respective SDKs of each device. Unfortunately the SDK we got for Futronic's scanner
+did not have capabilities so that we could we use it with any other system. So for Futronic we are using routines that are independent from the SDK of Futronic.
+\begin{figure}
+	\begin{center}
+		\subfigure[Lumidigm scanner]{\label{fig:lumidigm}\includegraphics[width=0.3\textwidth]{scanners/lumi.jpg}}
+		\subfigure[Secugen scanner]{\label{fig:secugen}\includegraphics[width=0.3\textwidth]{scanners/secugen.jpg}}
+			\subfigure[Futronic scanner]{\label{fig:futronic}\includegraphics[width=0.3\textwidth]{scanners/fs88.jpg}}
+	\end{center}
+	\caption{Scanners}
+	\label{fig:scanners}
+
+\end{figure} 
+							\vspace{2mm}
 They have the following configuration.
 
 \begin{center}
@@ -21,17 +44,31 @@ They have the following configuration.
 	\end{tabular}
 \end{center}
 
-By interoprability we mean given a biometric recognition system from a particular manufacturer we must be able to use it with other manufacturers as well
-as one system from a particular manufacturer is not feasible to deply everywhere.
 
+\section*{Biometric System}
+Any operation from a biometric system consists of three stages. They can be listed as follows :
+\begin{itemize}
+	\item Image Acquisition : The image needs to be acquired from the scanner device.
+	\item Feature Extractor : From the image the features are to be extracted and stored in a standard format.
+	\item Matching : We matching two features obtained from two subjects and get a matching score.
+\end{itemize}
+
+By interoprability we mean given a biometric recognition system from a particular manufacturer we must be able to use it with other manufacturers as well
+as one system from a particular manufacturer is not feasible to deploy everywhere.
 
 We have various expections from a interoperable system. Most importantly a person making enrollment from a device X, when  presents his biometrics data at biometric Y we should be verify his identity with a decent accuracy. As every biometric system has various processes that begins from image acquisition to matching using biometric templates other expectations would be to use the artifacts obtained from a biometric identity should be usable for the next stage by another biometric system.
 
-\newpage
 \section*{Achieving Interoperability}
-We noted that all the images we acquired from the sensors are of the same format. The only difference is the dimension of the image acquired from different sensor. So to achieve interoprability at the feature extractor level we need to make sure that the image needs to be of the same size according to the requirements of the feature extractor. We observed that not all SDK has this feature.
-Once we have an image we store the features from it. The format in which we store the feature should be consistent across the SDKs. Again we make a comment  here that not all the SDK does so. In particular we need to store the features in ISO/IEC 19794-2:2005 standard. It also has the advantage that we can store some information about the source of the image. That will be helpful to us in further stages.
-We  observed that while matching the accuracy of the respective matcher of the SDKs is fine when we use it to compare features that are obtained from two instances from the same device. This accuracy is lost when we try to do verification with features obtained from images of different devices. So we need a correctional factor when we need to do matching in which we are using artifacts from two different sources.
+We noted that all the images we acquired from the sensors are of the same format.
+The only difference is the dimension of the image acquired from different sensor.
+So to achieve interoprability at the feature extractor level we need to make sure that the image needs to be of the same size according to the requirements of the feature extractor. 
+We observed that not all SDK has this feature. In particular Secugen's SDK does not have this capability to calculate features from a image that has different dimensions from the image captured by Secugen's SDK. \\
+Once we have an image we store the features from it. 
+The format in which we store the feature should be consistent across the SDKs. 
+Again we make a comment  here that not all the SDK does so. In particular we need to store the features in ISO/IEC 19794-2:2005 standard. 
+It also has the advantage that we can store some information about the source of the image. That will be helpful to us in further stages. 
+We also make a comment here that Futronic's SDK has no such capability. It does not give us features in ISO format that is required to achieve interoperability. So in case of Futronic we use independent software such as NBIS to work with it. \\
+We  observed that while matching the accuracy of the respective matcher of the SDKs is fine when we use it to compare features that are obtained from two instances from the same device. This accuracy suffers when we try to do verification with features obtained from images of different devices. So we need to design a matcher  when we need to do matching in which we are using artifacts from two different sources. \\
 So overall we are trying to achieve interoperability by making the following modifications :
 \begin{itemize}
 	\item By abiding to standards when storing a biometric trait i.e image and biometric template.
@@ -43,5 +80,14 @@ So overall we are trying to achieve interoperability by making the following mod
 		\end{itemize}
 \end{itemize}
 
-
+\section*{Matching algorithm}
+Fingerprint is a pattern made of ridges and valleys. Features in a fingerprint consists of minutiae points. The minutiae consists of two type of pattern occuring in a fingerprint, ridge endingds where the ridge ends and 
+bifurcations  where the ridge gets bifurcated i.e it splits. So the coordinates of such pattern along with the angle gives us a minutiae point. This does not change with age so we can compare the similarity between fingerprints
+at different points in time to check his genuinity.  \\
+Given such minutiae points we design an algorithm which is invariant to translation and rotation which happens due to constraints in the image capturing process. 
+We form pairs of minutiaes in the gallery as well as the probe featureset. We check for similarity between pairs and then based on the similiarity we note the corresponding minutiae points in the probe featureset.
+The reason we form pairs is that we want our algorithm to be invariant to translation and rotation. So we exploit the locality of a minutiae point to find corresponding minutiae points. \\
+Based on the mapping obtained
+we grow a graph where nodes are minutiaes and based on the similarity of the graph we do the matching. We also introduce a correctional factor while computing the matching score to maintain accuracy even when we
+compare featureset obtained from two different scanner device. We try to incorporate correctional factor to reduce the effect of differences due to the sources.
 \end{document}
